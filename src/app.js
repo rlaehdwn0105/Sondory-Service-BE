@@ -25,8 +25,8 @@ const app = express();
 app.set('port', process.env.PORT || 8001);
 
 app.use(cors({
-  origin: "http://localhost:3000",
-  credentials: true,
+	  origin: "http://kimdongju.site",
+	  credentials: true,
 }));
 
 app.use(express.json());
@@ -34,24 +34,24 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 if (process.env.NODE_ENV === 'production') {
-  const logDir = path.join(process.cwd(), "tmp");
-  const logPath = path.join(logDir, "access.log");
-  if (!fs.existsSync(logDir)) {
-    fs.mkdirSync(logDir);
-  }
-  const logStream = fs.createWriteStream(logPath, { flags: 'a' });
-  app.use(morgan('combined', { stream: logStream }));
+	  const logDir = path.join(process.cwd(), "tmp");
+	  const logPath = path.join(logDir, "access.log");
+	  if (!fs.existsSync(logDir)) {
+		      fs.mkdirSync(logDir);
+		    }
+	  const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+	  app.use(morgan('combined', { stream: logStream }));
 
-  app.use(helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: false,
-  }));
+	  app.use(helmet({
+		      contentSecurityPolicy: false,
+		      crossOriginEmbedderPolicy: false,
+		      crossOriginResourcePolicy: false,
+		    }));
 
-  app.use(hpp()); 
+	  app.use(hpp());
 } else {
-  app.use(morgan('dev'));
-  app.use(helmet()); 
+	  app.use(morgan('dev'));
+	  app.use(helmet());
 }
 
 const specs = swaggerJsdoc(options);
@@ -59,12 +59,11 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 db.sequelize.sync({ force: false })
   .then(() => {
-    console.log('Database connection successful');
-  })
+	      console.log('Database connection successful');
+	    })
   .catch((err) => {
-    console.error('Failed to connect to the database:', err);
-  });
-
+	      console.error('Failed to connect to the database:', err);
+	    });
 
 app.use("/api/stream", streamRoute);
 app.use("/api/upload", uploadRoute);
@@ -73,19 +72,26 @@ app.use("/api/song", songRoute);
 app.use("/api/like", likeRoute);
 app.use("/api/user", userRoute);
 
+app.get('/health', (req, res) => {
+	  res.status(200).json({
+		      success: true,
+		      message: 'OK'
+		    });
+});
 
 app.use((req, res, next) => {
-  const error = new Error(`${req.method} ${req.url} route not found.`);
-  error.status = 404;
-  next(error);
+	  const error = new Error(`${req.method} ${req.url} route not found.`);
+	  error.status = 404;
+	  next(error);
 });
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal Server Error',
-  });
+	  console.error(err.stack);
+	  res.status(err.status || 500).json({
+		      success: false,
+		      message: err.message || 'Internal Server Error',
+		    });
 });
 
 export default app;
+
