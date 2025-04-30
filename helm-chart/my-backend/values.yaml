@@ -21,7 +21,6 @@ resources:
     memory: 256Mi
     cpu: 250m
 
-# ✅ 권한 수정: root 사용자로 실행
 podSecurityContext:
   runAsUser: 0
   fsGroup: 3000
@@ -37,7 +36,7 @@ securityContext:
 podAnnotations: {}
 
 # =========================
-# Service 관련 설정
+# Service (Production)
 # =========================
 service:
   type: ClusterIP
@@ -45,7 +44,16 @@ service:
   targetPort: 8001
 
 # =========================
-# Ingress 관련 설정
+# Service (Preview)
+# =========================
+previewService:
+  enabled: true
+  port: 80
+  targetPort: 8001
+  type: ClusterIP
+
+# =========================
+# Ingress (Production)
 # =========================
 ingress:
   enabled: true
@@ -60,6 +68,27 @@ ingress:
     external-dns.alpha.kubernetes.io/hostname: kimdongju.site
   hosts:
     - host: kimdongju.site
+      paths:
+        - path: /api
+          pathType: Prefix
+  tls: []
+
+# =========================
+# Ingress (Preview)
+# =========================
+previewIngress:
+  enabled: true
+  className: "alb"
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: sondory-group
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/success-codes: '200,302'
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    external-dns.alpha.kubernetes.io/hostname: preview.kimdongju.site
+  hosts:
+    - host: preview.kimdongju.site
       paths:
         - path: /api
           pathType: Prefix
@@ -120,6 +149,7 @@ cloudfrontKeySecret:
   mountPath: /app/src/keys/
 
 envFromSecret: sondory-secret
+
 # =========================
 # 기타 설정
 # =========================
