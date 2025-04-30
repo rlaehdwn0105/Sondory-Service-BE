@@ -3,8 +3,8 @@ pipeline {
 
   environment {
     dockerHubRegistry = 'dongjukim123/soundory-be'
-    dockerHubRegistryCredential = 'dockerhub-token'       // DockerHub 로그인용
-    githubCredential = 'github-token'                     // GitHub Token (usernamePassword 타입)
+    dockerHubRegistryCredential = 'dockerhub-token'
+    githubCredential = 'github-token'
     GITHUB_REPO_URL = 'https://github.com/rlaehdwn0105/Sondory-Service-BE.git'
     GITHUB_BRANCH = 'main'
   }
@@ -44,7 +44,7 @@ pipeline {
       }
     }
 
-    stage('Update values.yaml and Git Push') {
+    stage('Update image.tag in values.yaml and Git Push') {
       steps {
         withCredentials([usernamePassword(credentialsId: githubCredential, usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
           sh '''
@@ -58,8 +58,7 @@ pipeline {
             git add helm-chart/my-backend/values.yaml
             git commit -m "ci: rollout to canary image for build #${BUILD_NUMBER}" || echo "No changes to commit"
 
-            git config credential.helper '!f() { echo "username=${GH_USER}"; echo "password=${GH_TOKEN}"; }; f'
-            git push origin main
+            git push https://${GH_USER}:${GH_TOKEN}@github.com/rlaehdwn0105/Sondory-Service-BE.git main
           '''
         }
       }
