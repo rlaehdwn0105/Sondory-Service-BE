@@ -48,7 +48,7 @@ pipeline {
     stage('✏️ Update values.yaml and Git Push') {
       steps {
         withCredentials([usernamePassword(credentialsId: githubCredential, usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
-          sh '''
+          sh """
             git checkout main
 
             sed -i 's/^  tag: .*/  tag: canary/' helm-chart/my-backend/values.yaml
@@ -58,13 +58,12 @@ pipeline {
 
             git add helm-chart/my-backend/values.yaml
             git commit -m "ci: rollout to canary image for build #${BUILD_NUMBER}" || echo "No changes to commit"
-          '''
-          // 안전하게 토큰 push
-          sh(script: 'git push https://${GH_USER}:${GH_TOKEN}@github.com/${GITHUB_USERNAME}/${GITHUB_REPO}.git main', shell: '/bin/bash')
+
+            git push https://${GH_USER}:${GH_TOKEN}@github.com/${GITHUB_USERNAME}/${GITHUB_REPO}.git main
+          """
         }
       }
     }
-  }
 
   post {
     success {
