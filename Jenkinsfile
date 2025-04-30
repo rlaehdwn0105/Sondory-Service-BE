@@ -47,7 +47,7 @@ pipeline {
 
   post {
     success {
-      echo 'CI 성공: Docker 이미지 빌드 및 푸시 완료'
+      echo 'CI1 성공: Docker 이미지 빌드 및 푸시 완료'
     }
     failure {
       echo 'CI 실패: 확인 필요'
