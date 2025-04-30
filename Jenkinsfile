@@ -49,6 +49,8 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: githubCredential, usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
           sh """
             git checkout main
+            git pull --rebase origin main
+
             sed -i 's/^  tag: .*/  tag: canary/' helm-chart/my-backend/values.yaml
 
             git config --global user.name "jenkins-bot"
@@ -56,7 +58,9 @@ pipeline {
 
             git add helm-chart/my-backend/values.yaml
             git commit -m "ci: rollout to canary image for build #${BUILD_NUMBER}" || echo "No changes to commit"
-            git push https://${GH_USER}:${GH_TOKEN}@github.com/${GITHUB_USERNAME}/${GITHUB_REPO}.git main
+
+            git config credential.helper '!f() { echo "username=${GH_USER}"; echo "password=${GH_TOKEN}"; }; f'
+            git push origin main
           """
         }
       }
