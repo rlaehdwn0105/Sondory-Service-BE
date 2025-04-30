@@ -1,13 +1,14 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
-  name: {{ include "my-backend.fullname" . }}
+  name: {{ .Release.Name }}
   labels:
     {{- include "my-backend.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  revisionHistoryLimit: 2
   selector:
     matchLabels:
       {{- include "my-backend.selectorLabels" . | nindent 6 }}
@@ -84,3 +85,16 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+  strategy:
+    canary:
+      steps:
+        - experiment:
+            templates:
+              - name: canary-preview
+                specRef: canary
+                selector:
+                  matchLabels:
+                    app: {{ .Chart.Name }}-preview
+                metadata:
+                  labels:
+                    app: {{ .Chart.Name }}-preview
