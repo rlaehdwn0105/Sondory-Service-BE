@@ -66,13 +66,16 @@ spec:
                 name: {{ .Values.envFromSecret }}
             {{- end }}
           volumeMounts:
-            - name: cloudfront-key
-              mountPath: /app/src/keys/
+            - name: secrets-store
+              mountPath: {{ .Values.secretProviderClass.mountPath }}
               readOnly: true
       volumes:
-        - name: cloudfront-key
-          secret:
-            secretName: cloudfront-key-secret
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.secretProviderClass.name }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
