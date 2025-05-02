@@ -151,6 +151,7 @@ secretProviderClass:
     enabled: true
     name: sondory-backend-secret
 
+envFromSecret: sondory-backend-secret
 
 # =========================
 # 기타 설정
