@@ -147,12 +147,6 @@ configMap:
 secretProviderClass:
   name: sondory-backend-secret
   mountPath: /app/mnt/secrets-store/
-  syncSecret:
-    enabled: true
-    name: sondory-backend-secret
-
-envFromSecret: sondory-backend-secret
-
 
 
 # =========================
