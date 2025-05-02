@@ -4,7 +4,7 @@ import Song from "../models/song.js";
 import { getSignedUrl } from "@aws-sdk/cloudfront-signer";
 
 const cfAccessKeyId = process.env.CF_ACCESS_KEY_ID;
-const privateKeyPath = path.join(process.cwd(), process.env.CF_PRIVATE_KEY_PATH);
+const privateKeyPath = process.env.CF_PRIVATE_KEY_PATH;
 const cfPrivateKey = fs.readFileSync(privateKeyPath, "utf-8");
 const distUrl = process.env.DIST_URL;
 
