@@ -146,7 +146,7 @@ configMap:
 # =========================
 secretProviderClass:
   name: sondory-backend-secret
-  mountPath: /app/mnt/secrets-store/
+  mountPath: /mnt/secrets-store/
 
 
 # =========================
