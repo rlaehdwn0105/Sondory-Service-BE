@@ -148,7 +148,6 @@ secretProviderClass:
   name: sondory-backend-secret
   mountPath: /mnt/secrets-store/
 
-envFromSecret: sondory-backend-secret
 
 # =========================
 # 기타 설정
