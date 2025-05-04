@@ -86,6 +86,11 @@ db.sequelize.sync({ force: false })
     console.error('Failed to connect to the database:', err);
   });
 
+// ✅ ADD: Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 app.use('/api/stream', streamRoute);
 app.use('/api/upload', uploadRoute);
 app.use('/api/auth', authRoute);
