@@ -1,11 +1,24 @@
 // tracing.js
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
-import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
-import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import pkgResource from '@opentelemetry/resources';
+const { Resource } = pkgResource;
+
+import pkgSemConv from '@opentelemetry/semantic-conventions';
+const { SemanticResourceAttributes } = pkgSemConv;
+
+import pkgSdkNode from '@opentelemetry/sdk-node';
+const { NodeSDK } = pkgSdkNode;
+
+import pkgAutoInst from '@opentelemetry/auto-instrumentations-node';
+const { getNodeAutoInstrumentations } = pkgAutoInst;
+
+import pkgTraceExp from '@opentelemetry/exporter-trace-otlp-grpc';
+const { OTLPTraceExporter } = pkgTraceExp;
+
+import pkgMetricExp from '@opentelemetry/exporter-metrics-otlp-proto';
+const { OTLPMetricExporter } = pkgMetricExp;
+
+import pkgMetricSdk from '@opentelemetry/sdk-metrics';
+const { PeriodicExportingMetricReader } = pkgMetricSdk;
 
 const traceExporter = new OTLPTraceExporter({
   url: 'http://otel-collector.observability.svc.cluster.local:4317'
