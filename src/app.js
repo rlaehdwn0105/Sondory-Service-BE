@@ -21,8 +21,7 @@ import userRoute from './routes/userRoute.js';
 import uploadRoute from './routes/uploadRoute.js';
 import streamRoute from './routes/streamRoute.js';
 
-import { trace, context } from '@opentelemetry/api';    
-import { MeterProvider } from '@opentelemetry/sdk-metrics';
+import { trace, context } from '@opentelemetry/api';
 
 dotenv.config();
 
