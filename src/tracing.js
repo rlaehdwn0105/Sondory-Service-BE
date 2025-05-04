@@ -3,13 +3,14 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { Resource } from '@opentelemetry/resources';
+import pkg from '@opentelemetry/resources'; // <-- 여기 변경
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+
+const { Resource } = pkg;
 
 const OTEL_COLLECTOR = 'otel-otel-collector.lgtm.svc.cluster.local';
 
 const sdk = new NodeSDK({
-  // 👇 service.name을 명시해야 Tempo에서 이름이 나옴!
   resource: new Resource({
     [SemanticResourceAttributes.SERVICE_NAME]: 'backend-service',
   }),
