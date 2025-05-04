@@ -1,4 +1,4 @@
-// tracing.js (ESM 기반 OTLP Exporter 운영용 설정)
+// tracing.js (ESM 기반 OTLP Exporter 운영용 설정 - 수정됨)
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
@@ -22,6 +22,6 @@ const sdk = new NodeSDK({
   instrumentations: [getNodeAutoInstrumentations()],
 });
 
-sdk.start()
-  .then(() => console.log('✅ OTEL SDK started with OTLP exporters'))
-  .catch((err) => console.error('❌ OTEL SDK failed to start', err));
+sdk.start();
+
+console.log('✅ OTEL SDK started with OTLP exporters');
