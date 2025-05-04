@@ -1,3 +1,5 @@
+// app.js
+import './tracing.js';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
@@ -19,44 +21,57 @@ import userRoute from './routes/userRoute.js';
 import uploadRoute from './routes/uploadRoute.js';
 import streamRoute from './routes/streamRoute.js';
 
+import { trace, context } from '@opentelemetry/api';    
+import { MeterProvider } from '@opentelemetry/sdk-metrics';
+
 dotenv.config();
 
 const app = express();
 app.set('port', process.env.PORT || 8001);
 
-app.use(
-  cors({
-    origin: "http://kimdongju.site",
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true,
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-if (process.env.NODE_ENV === 'production') {
-  const logDir = path.join(process.cwd(), "tmp");
-  const logPath = path.join(logDir, "access.log");
-
-  if (!fs.existsSync(logDir)) {
-    fs.mkdirSync(logDir);
-  }
-
+if (process.env.NODE_ENV === 'development') {
+  const logDir = path.join(process.cwd(), 'tmp');
+  const logPath = path.join(logDir, 'access.log');
+  if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
   const logStream = fs.createWriteStream(logPath, { flags: 'a' });
-  app.use(morgan('combined', { stream: logStream }));
 
-  app.use(
-    helmet({
-      contentSecurityPolicy: false,
-      crossOriginEmbedderPolicy: false,
-      crossOriginResourcePolicy: false,
-    })
-  );
+  app.use(morgan((tokens, req, res) => {
+    const traceId = trace.getSpan(context.active())?.spanContext().traceId;
+    return [
+      `trace_id=${traceId}`,
+      tokens.method(req, res),
+      tokens.url(req, res),
+      tokens.status(req, res),
+      tokens['response-time'](req, res), 'ms'
+    ].join(' ');
+  }, { stream: logStream }));
 
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false,
+  }));
   app.use(hpp());
 } else {
-  app.use(morgan('dev'));
+  app.use(morgan((tokens, req, res) => {
+    const traceId = trace.getSpan(context.active())?.spanContext().traceId;
+    return [
+      `trace_id=${traceId}`,
+      tokens.method(req, res),
+      tokens.url(req, res),
+      tokens.status(req, res),
+      tokens['response-time'](req, res), 'ms'
+    ].join(' ');
+  }));
   app.use(helmet());
 }
 
@@ -71,19 +86,12 @@ db.sequelize.sync({ force: false })
     console.error('Failed to connect to the database:', err);
   });
 
-app.use("/api/stream", streamRoute);
-app.use("/api/upload", uploadRoute);
-app.use("/api/auth", authRoute);
-app.use("/api/song", songRoute);
-app.use("/api/like", likeRoute);
-app.use("/api/user", userRoute);
-
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'OK',
-  });
-});
+app.use('/api/stream', streamRoute);
+app.use('/api/upload', uploadRoute);
+app.use('/api/auth', authRoute);
+app.use('/api/song', songRoute);
+app.use('/api/like', likeRoute);
+app.use('/api/user', userRoute);
 
 app.use((req, res, next) => {
   const error = new Error(`${req.method} ${req.url} route not found.`);
