@@ -1,6 +1,5 @@
 // tracing.js
-import resourceModule from '@opentelemetry/resources';
-const { Resource } = resourceModule;
+import { Resource } from '@opentelemetry/resources/build/src/resource.js';
 
 import semconvModule from '@opentelemetry/semantic-conventions';
 const { SemanticResourceAttributes } = semconvModule;
