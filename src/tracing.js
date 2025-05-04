@@ -6,11 +6,11 @@ import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 
 const traceExporter = new OTLPTraceExporter({
-  url: 'http://otel-collector-opentelemetry-collector.lgtm.svc.cluster.local:4317'
+  url: 'http://otel-otel-collector.lgtm.svc.cluster.local:4317'
 });
 
 const metricExporter = new OTLPMetricExporter({
-  url: 'http://otel-collector-opentelemetry-collector.lgtm.svc.cluster.local:4318/v1/metrics'
+  url: 'http://otel-otel-collector.lgtm.svc.cluster.local:4318/v1/metrics'
 });
 
 const sdk = new NodeSDK({
