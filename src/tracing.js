@@ -17,7 +17,6 @@ const sdk = new NodeSDK({
   metricReader: new PeriodicExportingMetricReader({
     exporter: new OTLPMetricExporter({
       url: `http://${OTEL_COLLECTOR}:4318/v1/metrics`,
-      // concurrencyLimit: 1, // 필요 시 동시 요청 제한
     }),
     exportIntervalMillis: 1000,
   }),
@@ -26,12 +25,17 @@ const sdk = new NodeSDK({
   instrumentations: [getNodeAutoInstrumentations()],
 });
 
-// SDK 시작
-sdk.start()
-  .then(() => console.log('✅ OTEL SDK started (traces + metrics)'))
-  .catch(err => console.error('❌ OTEL SDK failed to start', err));
+// async IIFE로 sdk.start() 호출
+(async () => {
+  try {
+    await sdk.start();
+    console.log('✅ OTEL SDK started (traces + metrics)');
+  } catch (err) {
+    console.error('❌ OTEL SDK failed to start', err);
+  }
+})();
 
-// graceful shutdown: 프로세스 종료 시 남은 데이터 플러시
+// graceful shutdown: SIGINT, SIGTERM 수신 시 sdk.shutdown() 호출
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, async () => {
     try {
@@ -40,7 +44,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
     } catch (err) {
       console.error('❌ Error shutting down OTEL SDK', err);
     } finally {
-      process.exit();
+      process.exit(0);
     }
   });
 }
