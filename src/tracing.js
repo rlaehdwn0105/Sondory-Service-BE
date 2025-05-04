@@ -3,10 +3,10 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import pkg from '@opentelemetry/resources'; // <-- 여기 변경
+import resourcesPkg from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
-const { Resource } = pkg;
+const Resource = resourcesPkg.Resource;
 
 const OTEL_COLLECTOR = 'otel-otel-collector.lgtm.svc.cluster.local';
 
