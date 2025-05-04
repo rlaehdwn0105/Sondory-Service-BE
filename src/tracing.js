@@ -3,17 +3,18 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import resourcesPkg from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
-const Resource = resourcesPkg.Resource;
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+
+const resource = resourceFromAttributes({
+  [SEMRESATTRS_SERVICE_NAME]: 'backend-service',
+});
 
 const OTEL_COLLECTOR = 'otel-otel-collector.lgtm.svc.cluster.local';
 
 const sdk = new NodeSDK({
-  resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: 'backend-service',
-  }),
+  resource,
 
   traceExporter: new OTLPTraceExporter({
     url: `http://${OTEL_COLLECTOR}:4317`,
