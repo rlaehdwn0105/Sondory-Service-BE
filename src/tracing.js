@@ -1,6 +1,14 @@
-// tracing.js
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
-// ... 나머지 import 생략
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
+import { logs } from '@opentelemetry/api-logs';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
