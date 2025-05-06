@@ -82,6 +82,9 @@ if (process.env.NODE_ENV === 'development') {
 const specs = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
 // DB 연결
 db.sequelize.sync({ force: false })
   .then(() => {
