@@ -17,17 +17,34 @@ const resource = resourceFromAttributes({
   'service.version': '1.0.0'
 });
 
+// ✅ 로그 Exporter + LoggerProvider 설정
+const logExporter = new OTLPLogExporter({
+  url: 'http://otel-otel-collector.lgtm.svc.cluster.local:4318/v1/logs'
+});
+
+const loggerProvider = new LoggerProvider({
+  resource
+});
+
+loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
+logs.setGlobalLoggerProvider(loggerProvider);
+
 const sdk = new NodeSDK({
   resource,
-  traceExporter: new OTLPTraceExporter({ url: 'http://otel-otel-collector.lgtm.svc.cluster.local:4317' }),
+  traceExporter: new OTLPTraceExporter({
+    url: 'http://otel-otel-collector.lgtm.svc.cluster.local:4317'
+  }),
   metricReader: new PeriodicExportingMetricReader({
-    exporter: new OTLPMetricExporter({ url: 'http://otel-otel-collector.lgtm.svc.cluster.local:4318/v1/metrics' }),
+    exporter: new OTLPMetricExporter({
+      url: 'http://otel-otel-collector.lgtm.svc.cluster.local:4318/v1/metrics'
+    }),
     exportIntervalMillis: 1000
   }),
   instrumentations: [
     getNodeAutoInstrumentations({
       '@opentelemetry/instrumentation-fs': { enabled: false },
-      '@opentelemetry/instrumentation-winston': { enabled: true }
+      '@opentelemetry/instrumentation-winston': { enabled: true },
+      '@opentelemetry/instrumentation-express': { enabled: true } // 💡 이것도 확실히 추가하자
     }),
     new WinstonInstrumentation({
       logHook: (span, record) => {
@@ -43,7 +60,7 @@ const sdk = new NodeSDK({
 (async () => {
   try {
     await sdk.start();
-    console.log('✅ OTEL SDK started (traces + metrics)');
+    console.log('✅ OTEL SDK started (traces + metrics + logs)');
   } catch (err) {
     console.error('❌ OTEL SDK failed to start', err);
   }
