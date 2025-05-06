@@ -19,6 +19,7 @@ import userRoute from './routes/userRoute.js';
 import uploadRoute from './routes/uploadRoute.js';
 import streamRoute from './routes/streamRoute.js';
 
+import { trace, context } from '@opentelemetry/api'; // ✅ 추가된 부분
 import winston from 'winston';
 import otelTransportPkg from '@opentelemetry/winston-transport';
 const { OpenTelemetryTransportV3 } = otelTransportPkg;
