@@ -32,10 +32,11 @@ const sdk = new NodeSDK({
   ]
 });
 
-sdk.start()
-  .then(() => {
-    console.log('✅ OpenTelemetry SDK started');
-  })
-  .catch((err) => {
-    console.error('❌ OpenTelemetry SDK failed to start', err);
-  });
+(async () => {
+  try {
+    await sdk.start();
+    console.log('✅ OTEL SDK started (traces + metrics)');
+  } catch (err) {
+    console.error('❌ OTEL SDK failed to start', err);
+  }
+})();
