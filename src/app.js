@@ -1,5 +1,3 @@
-// app.js
-import './tracing.js';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
@@ -21,8 +19,9 @@ import userRoute from './routes/userRoute.js';
 import uploadRoute from './routes/uploadRoute.js';
 import streamRoute from './routes/streamRoute.js';
 
-import { trace, context } from '@opentelemetry/api';    
-import { MeterProvider } from '@opentelemetry/sdk-metrics';
+import winston from 'winston';
+import otelTransportPkg from '@opentelemetry/winston-transport';
+const { OpenTelemetryTransportV3 } = otelTransportPkg;
 
 dotenv.config();
 
@@ -38,22 +37,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// 🟡 Winston 로거 정의
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.Console(),
+    new OpenTelemetryTransportV3()
+  ]
+});
+
+// trace_id 포함하는 Morgan 설정
+const morganFormat = (tokens, req, res) => {
+  const traceId = trace.getSpan(context.active())?.spanContext().traceId || 'unknown';
+  return [
+    `trace_id=${traceId}`,
+    tokens.method(req, res),
+    tokens.url(req, res),
+    tokens.status(req, res),
+    tokens['response-time'](req, res), 'ms'
+  ].join(' ');
+};
+
 if (process.env.NODE_ENV === 'development') {
   const logDir = path.join(process.cwd(), 'tmp');
-  const logPath = path.join(logDir, 'access.log');
   if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
-  const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+  const logStream = fs.createWriteStream(path.join(logDir, 'access.log'), { flags: 'a' });
 
-  app.use(morgan((tokens, req, res) => {
-    const traceId = trace.getSpan(context.active())?.spanContext().traceId;
-    return [
-      `trace_id=${traceId}`,
-      tokens.method(req, res),
-      tokens.url(req, res),
-      tokens.status(req, res),
-      tokens['response-time'](req, res), 'ms'
-    ].join(' ');
-  }, { stream: logStream }));
+  app.use(morgan(morganFormat, { stream: logStream }));
 
   app.use(helmet({
     contentSecurityPolicy: false,
@@ -62,35 +73,24 @@ if (process.env.NODE_ENV === 'development') {
   }));
   app.use(hpp());
 } else {
-  app.use(morgan((tokens, req, res) => {
-    const traceId = trace.getSpan(context.active())?.spanContext().traceId;
-    return [
-      `trace_id=${traceId}`,
-      tokens.method(req, res),
-      tokens.url(req, res),
-      tokens.status(req, res),
-      tokens['response-time'](req, res), 'ms'
-    ].join(' ');
-  }));
+  app.use(morgan(morganFormat));
   app.use(helmet());
 }
 
+// Swagger
 const specs = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
+// DB 연결
 db.sequelize.sync({ force: false })
   .then(() => {
-    console.log('Database connection successful');
+    logger.info('✅ Database connected');
   })
   .catch((err) => {
-    console.error('Failed to connect to the database:', err);
+    logger.error('❌ Failed to connect to DB', { error: err.message });
   });
 
-// ✅ ADD: Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
-});
-
+// 라우트
 app.use('/api/stream', streamRoute);
 app.use('/api/upload', uploadRoute);
 app.use('/api/auth', authRoute);
@@ -98,14 +98,21 @@ app.use('/api/song', songRoute);
 app.use('/api/like', likeRoute);
 app.use('/api/user', userRoute);
 
+// 404 처리
 app.use((req, res, next) => {
   const error = new Error(`${req.method} ${req.url} route not found.`);
   error.status = 404;
   next(error);
 });
 
+// 에러 핸들링
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error('Unhandled error occurred', {
+    message: err.message,
+    status: err.status,
+    trace_id: trace.getSpan(context.active())?.spanContext().traceId || 'unknown',
+  });
+
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal Server Error',
