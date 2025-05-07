@@ -2,7 +2,7 @@
 
 import * as api from "@opentelemetry/api-logs";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
-import * as resources from "@opentelemetry/resources"; // 👈 핵심!
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
   BatchLogRecordProcessor,
   LoggerProvider
@@ -10,23 +10,17 @@ import {
 import { OpenTelemetryTransportV3 } from "@opentelemetry/winston-transport";
 import * as winston from "winston";
 
-// 👇 구조분해 할당으로 필요한 함수 꺼내기
-const {
-  detectResourcesSync,
-  envDetectorSync,
-  hostDetectorSync,
-  processDetectorSync,
-} = resources;
+// ✅ 정적인 리소스 정의
+const resource = resourceFromAttributes({
+  'service.name': 'backend-service',
+  'service.version': '1.0.0',
+});
 
 const logExporter = new OTLPLogExporter({
   url: 'http://otel-otel-collector.lgtm.svc.cluster.local:4318/v1/logs',
 });
 
-const loggerProvider = new LoggerProvider({
-  resource: detectResourcesSync({
-    detectors: [envDetectorSync, processDetectorSync, hostDetectorSync],
-  }),
-});
+const loggerProvider = new LoggerProvider({ resource });
 
 loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
 api.logs.setGlobalLoggerProvider(loggerProvider);
