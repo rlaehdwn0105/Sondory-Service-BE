@@ -1,3 +1,4 @@
+import './logger.js';
 import './tracing.js';
 import app from './app.js';
 
