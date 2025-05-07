@@ -1,5 +1,3 @@
-// logger.js
-
 import * as api from "@opentelemetry/api-logs";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
@@ -32,3 +30,6 @@ export const logger = winston.createLogger({
     new OpenTelemetryTransportV3(),
   ],
 });
+
+// ✅ 로거 테스트 메시지
+logger.info("🚀 Winston logger initialized and OTEL logging is active");
