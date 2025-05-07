@@ -34,19 +34,6 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-
-// 🟡 Winston 로거 정의
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [
-    new winston.transports.Console(),
-    new OpenTelemetryTransportV3()
-  ]
-});
 
 // trace_id 포함하는 Morgan 설정
 const morganFormat = (tokens, req, res) => {
