@@ -33,21 +33,8 @@ const sdk = new NodeSDK({
 (async () => {
   try {
     await sdk.start();
-    console.log('✅ OTEL SDK started (traces + metrics)');
+    console.log('OTEL SDK started (traces + metrics)');
   } catch (err) {
-    console.error('❌ OTEL SDK failed to start', err);
+    console.error('OTEL SDK failed to start', err);
   }
 })();
-
-for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, async () => {
-    try {
-      await sdk.shutdown();
-      console.log('🛑 OTEL SDK shut down gracefully');
-    } catch (err) {
-      console.error('❌ Error shutting down OTEL SDK', err);
-    } finally {
-      process.exit(0);
-    }
-  });
-}
