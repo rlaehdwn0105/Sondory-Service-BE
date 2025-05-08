@@ -103,7 +103,7 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   logger.error('Unhandled error occurred', {
     message: err.message,
-    status: err.status,
+    status: err.status || 500, 
     stack: err.stack,
     method: req.method,
     url: req.originalUrl,
