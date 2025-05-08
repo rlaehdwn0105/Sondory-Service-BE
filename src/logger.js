@@ -23,7 +23,7 @@ const loggerProvider = new LoggerProvider({ resource });
 loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
 api.logs.setGlobalLoggerProvider(loggerProvider);
 
-const logger = winston.createLogger({
+export const logger = winston.createLogger({
   level: "info",
   format: winston.format.combine(
     winston.format.timestamp(),
