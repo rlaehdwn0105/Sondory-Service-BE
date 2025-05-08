@@ -46,7 +46,7 @@ pipeline {
 
     stage('Update image.tag in values.yaml and Git Push') {
       steps {
-        withCredentials([usernamePassword(credentialsId: githubCredential, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+        withCredentials([usernamePassword(credentialsId: githubCredential, usernameVariable: 'USERNAME', passwordVariable: 'TOKEN')]) {
           sh '''
             set -e
 
@@ -61,10 +61,9 @@ pipeline {
             git add helm-chart/my-backend/values.yaml
             git commit -m "ci: rollout to canary image for build #$BUILD_NUMBER" || echo "No changes to commit"
 
-            export GIT_REMOTE_URL="https://$GIT_USER:$GIT_TOKEN@github.com/rlaehdwn0105/Sondory-Service-BE.git"
-
+            # GitHub 권장 방식: username은 x-access-token
             git remote remove origin || true
-            git remote add origin "$GIT_REMOTE_URL"
+            git remote add origin https://x-access-token:$TOKEN@github.com/rlaehdwn0105/Sondory-Service-BE.git
 
             git push origin main
           '''
