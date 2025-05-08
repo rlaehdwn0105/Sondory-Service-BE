@@ -10,7 +10,7 @@ export const getMySongs = async (req, res, next) => {
     const userId = req.user.id;
     if (!userId) {
       const error = new Error("User not found.");
-      error.statusCode = 401;
+      error.status = 401;
       throw error;
     }
 
@@ -45,14 +45,14 @@ export const uploadSong = async (req, res, next) => {
 
     if (!title || !coverUrl || !duration || !songUrl) {
       const error = new Error("All fields are required.");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
     const user = req.user;
     if (!user) {
       const error = new Error("User not found.");
-      error.statusCode = 401;
+      error.status = 401;
       throw error;
     }
 
@@ -82,13 +82,13 @@ export const deleteSong = async (req, res, next) => {
     const song = await Song.findOne({ where: { id: songId } });
     if (!song) {
       const error = new Error("Song not found.");
-      error.statusCode = 404;
+      error.status = 404;
       throw error;
     }
 
     if (song.UploaderId !== user.id) {
       const error = new Error("You are not the uploader of this song.");
-      error.statusCode = 403;
+      error.status = 403;
       throw error;
     }
 
