@@ -21,33 +21,42 @@ export async function signup(req, res, next) {
     const { email, password, username } = req.body;
 
     if (!email || !password || !username) {
-      throw new Error("All fields are required.");
+      const error = new Error("All fields are required.");
+      error.statusCode = 400;
+      throw error;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      throw new Error("Invalid email format.");
+      const error = new Error("Invalid email format.");
+      error.statusCode = 400;
+      throw error;
     }
 
     if (password.length < 6) {
-      throw new Error("Password must be at least 6 characters.");
+      const error = new Error("Password must be at least 6 characters.");
+      error.statusCode = 400;
+      throw error;
     }
 
     const emailExists = await User.findOne({ where: { email } });
     if (emailExists) {
-      throw new Error("Email already in use.");
+      const error = new Error("Email already in use.");
+      error.statusCode = 409;
+      throw error;
     }
 
     const usernameExists = await User.findOne({ where: { username } });
     if (usernameExists) {
-      throw new Error("Username already taken.");
+      const error = new Error("Username already taken.");
+      error.statusCode = 409;
+      throw error;
     }
 
     const hashedPassword = await bcryptjs.hash(password, await bcryptjs.genSalt(10));
-
     const rawToken = crypto.randomBytes(32).toString("hex");
     const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
-    const signupTokenExpiration = new Date(Date.now() + 1000 * 60 * 60); 
+    const signupTokenExpiration = new Date(Date.now() + 1000 * 60 * 60); // 1시간
 
     await User.create({
       email,
@@ -80,7 +89,7 @@ export async function signup(req, res, next) {
           </p>
         </div>
       </div>
-    `
+      `
     });
 
     res.status(201).json({
@@ -98,12 +107,24 @@ export async function login(req, res, next) {
     const { email, password } = req.body;
 
     const user = await User.findOne({ where: { email } });
-    if (!user) throw new Error("Invalid credentials.");
+    if (!user) {
+      const error = new Error("Invalid credentials.");
+      error.statusCode = 401;
+      throw error;
+    }
 
-    if (!user.isVerified) throw new Error("Please verify your email before logging in.");
+    if (!user.isVerified) {
+      const error = new Error("Please verify your email before logging in.");
+      error.statusCode = 403;
+      throw error;
+    }
 
     const isPasswordCorrect = await bcryptjs.compare(password, user.password);
-    if (!isPasswordCorrect) throw new Error("Invalid credentials.");
+    if (!isPasswordCorrect) {
+      const error = new Error("Invalid credentials.");
+      error.statusCode = 401;
+      throw error;
+    }
 
     generateTokenAndSetCookie(user.id, res);
 
@@ -127,7 +148,11 @@ export async function verifyEmail(req, res, next) {
       },
     });
 
-    if (!user) throw new Error("Invalid or expired token.");
+    if (!user) {
+      const error = new Error("Invalid or expired token.");
+      error.statusCode = 400;
+      throw error;
+    }
 
     user.isVerified = true;
     user.signupToken = null;
