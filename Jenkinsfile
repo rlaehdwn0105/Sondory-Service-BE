@@ -1,10 +1,6 @@
 pipeline {
   agent any
 
-  options {
-    skipDefaultCheckout(true)
-  }
-
   environment {
     DOCKER_REGISTRY    = 'dongjukim123/soundory-be'
     DOCKER_CREDENTIALS = 'dockerhub-token'
@@ -16,108 +12,100 @@ pipeline {
   }
 
   stages {
-    stage('Conditional Execution') {
-      when {
-        not {
-          changeset "helm-chart/**"
+
+    stage('Checkout') {
+      steps {
+        checkout([$class: 'GitSCM',
+          branches: [[name: "refs/heads/${env.GITHUB_BRANCH}"]],
+          userRemoteConfigs: [[
+            url: "${env.GITHUB_REPO_URL}",
+            credentialsId: "${env.GITHUB_CREDENTIALS}"
+          ]]
+        ])
+      }
+      post {
+        success {
+          echo 'Repository clone success!'
+        }
+        failure {
+          echo 'Repository clone failure!'
         }
       }
-      stages {
-        stage('Checkout') {
-          steps {
-            checkout([$class: 'GitSCM',
-              branches: [[name: "refs/heads/${env.GITHUB_BRANCH}"]],
-              userRemoteConfigs: [[
-                url: "${env.GITHUB_REPO_URL}",
-                credentialsId: "${env.GITHUB_CREDENTIALS}"
-              ]]
-            ])
-          }
-          post {
-            success {
-              echo 'Repository clone success!'
-            }
-            failure {
-              echo 'Repository clone failure!'
-            }
+    }
+
+    stage('Docker Build') {
+      steps {
+        sh """
+          docker build -t ${DOCKER_REGISTRY}:${BUILD_NUMBER} .
+          docker tag ${DOCKER_REGISTRY}:${BUILD_NUMBER} ${DOCKER_REGISTRY}:latest
+        """
+      }
+      post {
+        success {
+          echo 'Docker image build success!'
+        }
+        failure {
+          echo 'Docker image build failure!'
+        }
+      }
+    }
+
+    stage('Docker Push') {
+      steps {
+        withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS}", url: '') {
+          sh """
+            docker push ${DOCKER_REGISTRY}:${BUILD_NUMBER}
+            docker push ${DOCKER_REGISTRY}:latest
+          """
+          sleep 10
+        }
+      }
+      post {
+        success {
+          echo 'Docker image push success!'
+          sh """
+            docker rmi ${DOCKER_REGISTRY}:${BUILD_NUMBER} || true
+            docker rmi ${DOCKER_REGISTRY}:latest || true
+          """
+        }
+        failure {
+          echo 'Docker image push failure!'
+          sh """
+            docker rmi ${DOCKER_REGISTRY}:${BUILD_NUMBER} || true
+            docker rmi ${DOCKER_REGISTRY}:latest || true
+          """
+        }
+      }
+    }
+
+    stage('Update Helm values & Git Push') {
+      steps {
+        sh 'mkdir -p gitOpsRepo'
+        dir('gitOpsRepo') {
+          git branch: "${GITHUB_BRANCH}",
+              credentialsId: "${GITHUB_CREDENTIALS}",
+              url: "${GITHUB_REPO_URL}"
+
+          sh "git config --global user.email '${GIT_USER_EMAIL}'"
+          sh "git config --global user.name '${GIT_USER_NAME}'"
+
+          sh "sed -i 's|tag: .*|tag: ${BUILD_NUMBER}|' helm-chart/my-backend/values.yaml"
+
+          sh "git add helm-chart/my-backend/values.yaml"
+          sh "git commit -m 'ci: rollout to image build #${BUILD_NUMBER}' || echo 'No changes to commit'"
+
+          withCredentials([gitUsernamePassword(credentialsId: "${GITHUB_CREDENTIALS}", gitToolName: 'git-tool')]) {
+            sh "git remote set-url origin https://${GITHUB_CREDENTIALS}@github.com/rlaehdwn0105/Sondory-Service-BE.git"
+            sh "git push origin ${GITHUB_BRANCH}"
           }
         }
-
-        stage('Docker Build') {
-          steps {
-            sh """
-              docker build -t ${DOCKER_REGISTRY}:${BUILD_NUMBER} .
-              docker tag ${DOCKER_REGISTRY}:${BUILD_NUMBER} ${DOCKER_REGISTRY}:latest
-            """
-          }
-          post {
-            success {
-              echo 'Docker image build success!'
-            }
-            failure {
-              echo 'Docker image build failure!'
-            }
-          }
+      }
+      post {
+        success {
+          echo 'Helm values.yaml updated successfully!'
         }
-
-        stage('Docker Push') {
-          steps {
-            withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS}", url: '') {
-              sh """
-                docker push ${DOCKER_REGISTRY}:${BUILD_NUMBER}
-                docker push ${DOCKER_REGISTRY}:latest
-              """
-              sleep 10
-            }
-          }
-          post {
-            success {
-              echo 'Docker image push success!'
-              sh """
-                docker rmi ${DOCKER_REGISTRY}:${BUILD_NUMBER} || true
-                docker rmi ${DOCKER_REGISTRY}:latest || true
-              """
-            }
-            failure {
-              echo 'Docker image push failure!'
-              sh """
-                docker rmi ${DOCKER_REGISTRY}:${BUILD_NUMBER} || true
-                docker rmi ${DOCKER_REGISTRY}:latest || true
-              """
-            }
-          }
-        }
-
-        stage('Update Helm values & Git Push') {
-          steps {
-            sh 'mkdir -p gitOpsRepo'
-            dir('gitOpsRepo') {
-              git branch: "${GITHUB_BRANCH}",
-                  credentialsId: "${GITHUB_CREDENTIALS}",
-                  url: "${GITHUB_REPO_URL}"
-
-              sh "git config --global user.email '${GIT_USER_EMAIL}'"
-              sh "git config --global user.name '${GIT_USER_NAME}'"
-
-              sh "sed -i 's|tag: .*|tag: ${BUILD_NUMBER}|' helm-chart/my-backend/values.yaml"
-
-              sh "git add helm-chart/my-backend/values.yaml"
-              sh "git commit -m 'ci: rollout to image build #${BUILD_NUMBER}' || echo 'No changes to commit'"
-
-              withCredentials([gitUsernamePassword(credentialsId: "${GITHUB_CREDENTIALS}", gitToolName: 'git-tool')]) {
-                sh "git remote set-url origin https://${GITHUB_CREDENTIALS}@github.com/rlaehdwn0105/Sondory-Service-BE.git"
-                sh "git push origin ${GITHUB_BRANCH}"
-              }
-            }
-          }
-          post {
-            success {
-              echo 'Helm values.yaml updated and pushed successfully!'
-            }
-            failure {
-              echo 'Helm update or Git push failed!'
-            }
-          }
+        failure {
+          echo 'Helm update failed!'
         }
       }
     }
