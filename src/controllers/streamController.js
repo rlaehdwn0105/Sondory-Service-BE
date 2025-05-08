@@ -12,10 +12,10 @@ export const getSignedAudioUrl = async (req, res, next) => {
   try {
     const { songId } = req.params;
 
-    const song = await Song.findOne({ where: { id: songId }});
+    const song = await Song.findOne({ where: { id: songId } });
     if (!song) {
       const error = new Error("Song not found.");
-      error.statusCode = 404;
+      error.status = 404;
       throw error;
     }
 
