@@ -15,7 +15,9 @@ export const generatePresignedUrl = async (req, res, next) => {
     const { filename, contentType, type } = req.body;
 
     if (!filename || !contentType || !type) {
-      throw new Error("Missing filename, contentType, or type");
+      const error = new Error("Missing filename, contentType, or type.");
+      error.statusCode = 400;
+      throw error;
     }
 
     const ext = filename.split(".").pop();
@@ -33,7 +35,9 @@ export const generatePresignedUrl = async (req, res, next) => {
       folder = "coverimage";
       bucket = imageBucket;
     } else {
-      throw new Error("Invalid file type");
+      const error = new Error("Invalid file type.");
+      error.statusCode = 400;
+      throw error;
     }
 
     const key = `${folder}/${uuidv4()}.${ext}`;
@@ -48,6 +52,7 @@ export const generatePresignedUrl = async (req, res, next) => {
 
     res.status(200).json({ presignedUrl, key });
   } catch (error) {
+    if (!error.statusCode) error.statusCode = 500;
     next(error);
   }
 };
