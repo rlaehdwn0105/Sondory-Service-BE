@@ -16,7 +16,7 @@ export const generatePresignedUrl = async (req, res, next) => {
 
     if (!filename || !contentType || !type) {
       const error = new Error("Missing filename, contentType, or type.");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
@@ -36,7 +36,7 @@ export const generatePresignedUrl = async (req, res, next) => {
       bucket = imageBucket;
     } else {
       const error = new Error("Invalid file type.");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
@@ -52,7 +52,7 @@ export const generatePresignedUrl = async (req, res, next) => {
 
     res.status(200).json({ presignedUrl, key });
   } catch (error) {
-    if (!error.statusCode) error.statusCode = 500;
+    if (!error.status) error.status = 500;
     next(error);
   }
 };
