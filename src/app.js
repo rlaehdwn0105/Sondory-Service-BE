@@ -106,11 +106,13 @@ app.use((err, req, res, next) => {
     status: err.status || 500, 
     stack: err.stack,
     method: req.method,
+    data: err.data || null,
   });
 
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal Server Error',
+    data: err.data || null,
   });
 });
 
