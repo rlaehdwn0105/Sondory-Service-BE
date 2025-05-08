@@ -51,14 +51,15 @@ pipeline {
             git config --global user.name "jenkins-bot"
             git config --global user.email "jenkins@ci.local"
 
-            git pull --rebase origin main
+            git checkout ${GITHUB_BRANCH}
+            git pull --rebase origin ${GITHUB_BRANCH}
 
             sed -i 's/^  tag: .*/  tag: canary/' helm-chart/my-backend/values.yaml
 
             git add helm-chart/my-backend/values.yaml
             git commit -m "ci: rollout to canary image for build #${BUILD_NUMBER}" || echo "No changes to commit"
 
-            git push https://${GH_USER}:${GH_TOKEN}@github.com/rlaehdwn0105/Sondory-Service-BE.git main
+            git push https://${GH_USER}:${GH_TOKEN}@github.com/rlaehdwn0105/Sondory-Service-BE.git ${GITHUB_BRANCH}
           '''
         }
       }
@@ -67,10 +68,10 @@ pipeline {
 
   post {
     success {
-      echo '✅ 성공: Docker 이미지 빌드 및 values.yaml 업데이트 완료'
+      echo '성공: Docker 이미지 빌드 및 values.yaml 업데이트 완료'
     }
     failure {
-      echo '❌ 실패: 빌드 또는 Git 푸시에 문제가 발생했습니다.'
+      echo '실패: 빌드 또는 Git 푸시에 문제가 발생했습니다.'
     }
   }
 }
