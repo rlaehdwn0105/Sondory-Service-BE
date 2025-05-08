@@ -11,8 +11,13 @@ const distUrl = process.env.DIST_URL;
 export const getSignedAudioUrl = async (req, res, next) => {
   try {
     const { songId } = req.params;
-    const song = await Song.findOne({ where: { id: songId }}); 
-    if (!song) throw new Error("Song not found");
+
+    const song = await Song.findOne({ where: { id: songId }});
+    if (!song) {
+      const error = new Error("Song not found.");
+      error.statusCode = 404;
+      throw error;
+    }
 
     const bucketUrlPrefix = process.env.AWS_AUDIO_BUCKET_URL;
     const key = song.audioUrl.replace(bucketUrlPrefix, "");
@@ -22,7 +27,7 @@ export const getSignedAudioUrl = async (req, res, next) => {
       url: cfUrl,
       keyPairId: cfAccessKeyId,
       privateKey: cfPrivateKey,
-      dateLessThan: new Date(Date.now() + 1000 * 60 * 2).toISOString(), 
+      dateLessThan: new Date(Date.now() + 1000 * 60 * 2).toISOString(), // 2분 유효
     });
 
     return res.status(200).json({ signedUrl });
