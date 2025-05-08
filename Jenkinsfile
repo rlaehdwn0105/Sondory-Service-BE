@@ -59,7 +59,9 @@ pipeline {
             git add helm-chart/my-backend/values.yaml
             git commit -m "ci: rollout to canary image for build #$BUILD_NUMBER" || echo "No changes to commit"
 
-            git remote set-url origin https://$GH_USER:$GH_TOKEN@github.com/rlaehdwn0105/Sondory-Service-BE.git
+            git remote remove origin || true
+            git remote add origin https://$GH_USER:$GH_TOKEN@github.com/rlaehdwn0105/Sondory-Service-BE.git
+
             git push origin main
           '''
         }
