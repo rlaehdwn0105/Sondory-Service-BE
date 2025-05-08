@@ -1,7 +1,7 @@
 import User from "../models/user.js";
 import Song from "../models/song.js";
 import RecentPlay from "../models/recentplay.js";
-import { sanitizeSongs } from "../services/songSanitizer.js"; 
+import { sanitizeSongs } from "../services/songSanitizer.js";
 
 // 모든 곡 조회
 export const getAllSongs = async (req, res, next) => {
@@ -21,7 +21,8 @@ export const getAllSongs = async (req, res, next) => {
       ],
       order: [["createdAt", "DESC"]],
     });
-    const safeSongs = sanitizeSongs(songs); 
+
+    const safeSongs = sanitizeSongs(songs);
     res.status(200).json(safeSongs);
   } catch (error) {
     next(error);
@@ -32,8 +33,10 @@ export const getAllSongs = async (req, res, next) => {
 export const getSongById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    if (!id && id === req.user.id) {
-      throw new Error("Song id required or current user id");
+    if (!id || id !== req.user.id) {
+      const error = new Error("Song ID required or invalid.");
+      error.statusCode = 400;
+      throw error;
     }
 
     const songs = await Song.findAll({
@@ -53,7 +56,7 @@ export const getSongById = async (req, res, next) => {
       order: [["createdAt", "DESC"]],
     });
 
-    const safeSongs = sanitizeSongs(songs); 
+    const safeSongs = sanitizeSongs(songs);
     res.status(200).json(safeSongs);
   } catch (error) {
     next(error);
@@ -86,7 +89,7 @@ export const getrRecentSongs = async (req, res, next) => {
     });
 
     const onlySongs = recentSongs.map((i) => i.Song);
-    const safeSongs = sanitizeSongs(onlySongs); 
+    const safeSongs = sanitizeSongs(onlySongs);
     res.status(200).json(safeSongs);
   } catch (error) {
     next(error);
@@ -100,7 +103,9 @@ export const updateRecentSongs = async (req, res, next) => {
     const { songId } = req.params;
 
     if (!userId || !songId) {
-      throw new Error("User ID or Song ID is missing");
+      const error = new Error("User ID or Song ID is missing.");
+      error.statusCode = 400;
+      throw error;
     }
 
     const existing = await RecentPlay.findOne({
