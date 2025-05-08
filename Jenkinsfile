@@ -1,88 +1,74 @@
 pipeline {
   agent any
-
   environment {
-    dockerHubRegistry             = 'dongjukim123/soundory-be'
-    dockerHubRegistryCredential   = 'dockerhub-token'
-    githubCredential              = 'github-token'
-    GITHUB_REPO_URL               = 'https://github.com/rlaehdwn0105/Sondory-Service-BE.git'
-    GITHUB_BRANCH                 = 'main'
+    DOCKER_REGISTRY         = 'dongjukim123/soundory-be'
+    DOCKER_CREDENTIALS      = 'dockerhub-token'
+    GITHUB_CREDENTIALS      = 'github-token'
+    GITHUB_REPO_URL         = 'https://github.com/rlaehdwn0105/Sondory-Service-BE.git'
+    GITHUB_BRANCH           = 'main'
   }
-
   stages {
-    stage('Checkout from GitHub') {
+    stage('Checkout') {
       steps {
-        checkout([
-          $class: 'GitSCM',
-          branches: [[name: "refs/heads/${GITHUB_BRANCH}"]],
+        checkout([$class: 'GitSCM',
+          branches: [[name: "refs/heads/${env.GITHUB_BRANCH}"]],
           userRemoteConfigs: [[
-            url: "${GITHUB_REPO_URL}",
-            credentialsId: githubCredential
+            url: "${env.GITHUB_REPO_URL}",
+            credentialsId: "${env.GITHUB_CREDENTIALS}"
           ]]
         ])
       }
     }
-
-    stage('Docker Build & Tag') {
+    stage('Build & Push Docker') {
       steps {
         sh """
-          docker build -t ${dockerHubRegistry}:${BUILD_NUMBER} .
-          docker tag ${dockerHubRegistry}:${BUILD_NUMBER} ${dockerHubRegistry}:canary
-          docker tag ${dockerHubRegistry}:${BUILD_NUMBER} ${dockerHubRegistry}:latest
+          docker build -t ${env.DOCKER_REGISTRY}:${BUILD_NUMBER} .
+          docker tag  ${env.DOCKER_REGISTRY}:${BUILD_NUMBER} ${env.DOCKER_REGISTRY}:canary
+          docker tag  ${env.DOCKER_REGISTRY}:${BUILD_NUMBER} ${env.DOCKER_REGISTRY}:latest
         """
-      }
-    }
-
-    stage('Push Docker Images') {
-      steps {
-        withDockerRegistry(credentialsId: dockerHubRegistryCredential, url: '') {
+        withDockerRegistry(credentialsId: "${env.DOCKER_CREDENTIALS}", url: '') {
           sh """
-            docker push ${dockerHubRegistry}:${BUILD_NUMBER}
-            docker push ${dockerHubRegistry}:canary
-            docker push ${dockerHubRegistry}:latest
+            docker push ${env.DOCKER_REGISTRY}:${BUILD_NUMBER}
+            docker push ${env.DOCKER_REGISTRY}:canary
+            docker push ${env.DOCKER_REGISTRY}:latest
           """
         }
       }
     }
-
-    stage('Update Helm values.yaml & Git Push') {
+    stage('Update Helm values & Git Push') {
       steps {
         withCredentials([usernamePassword(
-          credentialsId: githubCredential,
+          credentialsId: "${env.GITHUB_CREDENTIALS}",
           usernameVariable: 'GIT_USER',
           passwordVariable: 'GIT_TOKEN'
         )]) {
-          sh '''
-            set -e
+          sh """
+            set -euxo pipefail
 
-            # Git 사용자 설정
-            git config --global user.name "jenkins-bot"
-            git config --global user.email "jenkins@ci.local"
+            git config user.name  "jenkins-bot"
+            git config user.email "jenkins@ci.local"
 
-            # 최신 main 가져오기
-            git checkout ${GITHUB_BRANCH}
-            git pull --rebase origin ${GITHUB_BRANCH}
+            git checkout ${env.GITHUB_BRANCH}
+            git pull --rebase origin ${env.GITHUB_BRANCH}
 
-            # values.yaml 의 tag 를 BUILD_NUMBER 로 교체
-            sed -i "s|^  tag: .*|  tag: ${BUILD_NUMBER}|" helm-chart/my-backend/values.yaml
+            # Helm values.yaml의 tag 수정
+            sed -i'' -e "s|^  tag: .*\$|  tag: ${BUILD_NUMBER}|" \\
+              helm-chart/my-backend/values.yaml
 
-            # 변경사항 커밋
-            if git diff --quiet; then
-              echo "No changes to commit"
+            # 변경사항이 있을 때만 커밋 및 푸시
+            if ! git diff --quiet helm-chart/my-backend/values.yaml; then
+              git add helm-chart/my-backend/values.yaml
+              git commit -m "ci: update helm image tag to ${BUILD_NUMBER}"
+              git push https://${GIT_USER}:${GIT_TOKEN}@github.com/rlaehdwn0105/Sondory-Service-BE.git \\
+                ${env.GITHUB_BRANCH}
             else
-              git commit -am "ci: update helm image tag to ${BUILD_NUMBER}"
+              echo "values.yaml is already up-to-date."
             fi
-
-            # 여기서 URL 과 refspec 을 각기 인용부호로 감싸줍니다!
-            git push \
-              "https://${GIT_USER}:${GIT_TOKEN}@github.com/rlaehdwn0105/Sondory-Service-BE.git" \
-              "HEAD:${GITHUB_BRANCH}"
-          '''
+          """
         }
       }
     }
   }
-
   post {
     success {
       echo '✅ 성공: 이미지 빌드·푸시 및 values.yaml 업데이트 완료'
