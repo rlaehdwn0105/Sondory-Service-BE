@@ -106,9 +106,6 @@ app.use((err, req, res, next) => {
     status: err.status || 500, 
     stack: err.stack,
     method: req.method,
-    url: req.originalUrl,
-    user_agent: req.headers['user-agent'],
-    timestamp: new Date().toISOString(),
   });
 
   res.status(err.status || 500).json({
