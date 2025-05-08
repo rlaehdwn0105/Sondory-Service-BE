@@ -23,13 +23,17 @@ const loggerProvider = new LoggerProvider({ resource });
 loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
 api.logs.setGlobalLoggerProvider(loggerProvider);
 
-export const logger = winston.createLogger({
+const logger = winston.createLogger({
   level: "info",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }), // stack 자동 포함
+    winston.format.json()
+  ),
   transports: [
     new winston.transports.Console(),
     new OpenTelemetryTransportV3(),
   ],
 });
 
-// ✅ 로거 테스트 메시지
-logger.info("🚀 Winston logger initialized and OTEL logging is active");
+logger.info("Winston logger initialized and OTEL logging is active");
