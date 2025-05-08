@@ -35,7 +35,7 @@ export const getSongById = async (req, res, next) => {
     const { id } = req.params;
     if (!id || id !== req.user.id) {
       const error = new Error("Song ID required or invalid.");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
@@ -104,7 +104,7 @@ export const updateRecentSongs = async (req, res, next) => {
 
     if (!userId || !songId) {
       const error = new Error("User ID or Song ID is missing.");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
