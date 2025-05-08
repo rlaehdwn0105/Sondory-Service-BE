@@ -13,6 +13,27 @@ pipeline {
 
   stages {
 
+    stage('Check Changed Files') {
+      steps {
+        script {
+          def changedFiles = sh(
+            script: "git diff --name-only HEAD~1 HEAD || true",
+            returnStdout: true
+          ).trim().split("\n")
+
+          def shouldRun = changedFiles.any { it.startsWith("src/") }
+
+          if (!shouldRun) {
+            echo "No changes in src/, skipping pipeline."
+            currentBuild.result = 'NOT_BUILT'
+            error('Pipeline skipped due to no src/ changes')
+          } else {
+            echo "Detected change in src/, proceeding with pipeline."
+          }
+        }
+      }
+    }
+
     stage('Checkout') {
       steps {
         checkout([$class: 'GitSCM',
@@ -91,12 +112,23 @@ pipeline {
 
           sh "sed -i 's|tag: .*|tag: ${BUILD_NUMBER}|' helm-chart/my-backend/values.yaml"
 
-          sh "git add helm-chart/my-backend/values.yaml"
-          sh "git commit -m 'ci: rollout to image build #${BUILD_NUMBER}' || echo 'No changes to commit'"
+          script {
+            def currentTag = sh(
+              script: "grep 'tag:' helm-chart/my-backend/values.yaml | awk '{print \$2}'",
+              returnStdout: true
+            ).trim()
 
-          withCredentials([gitUsernamePassword(credentialsId: "${GITHUB_CREDENTIALS}", gitToolName: 'git-tool')]) {
-            sh "git remote set-url origin https://${GITHUB_CREDENTIALS}@github.com/rlaehdwn0105/Sondory-Service-BE.git"
-            sh "git push origin ${GITHUB_BRANCH}"
+            if (currentTag == BUILD_NUMBER.toString()) {
+              echo "Tag is already ${BUILD_NUMBER}, skipping git push to avoid loop."
+            } else {
+              sh "git add helm-chart/my-backend/values.yaml"
+              sh "git commit -m 'ci: rollout to image build #${BUILD_NUMBER}' || echo 'No changes to commit'"
+
+              withCredentials([gitUsernamePassword(credentialsId: "${GITHUB_CREDENTIALS}", gitToolName: 'git-tool')]) {
+                sh "git remote set-url origin https://${GITHUB_CREDENTIALS}@github.com/rlaehdwn0105/Sondory-Service-BE.git"
+                sh "git push origin ${GITHUB_BRANCH}"
+              }
+            }
           }
         }
       }
