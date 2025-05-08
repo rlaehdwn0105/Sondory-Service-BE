@@ -67,10 +67,10 @@ pipeline {
 
   post {
     success {
-      echo '✅ 성공: 이미지 빌드·푸시 및 values.yaml 업데이트 완료'
+      echo '성공: 이미지 빌드·푸시 및 values.yaml 업데이트 완료'
     }
     failure {
-      echo '❌ 실패: 파이프라인 실행 중 오류 발생'
+      echo '실패: 파이프라인 실행 중 오류 발생'
     }
   }
 }
