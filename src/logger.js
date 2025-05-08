@@ -23,19 +23,19 @@ api.logs.setGlobalLoggerProvider(loggerProvider);
 
 export const logger = winston.createLogger({
   level: "info",
-  format: winston.format.combine(
-    winston.format.json()
-  ),
+  format: winston.format.json(),
   transports: [
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
         winston.format.timestamp(),
-        winston.format.printf(({ level, message, timestamp, ...meta }) => {
-          return `${timestamp} [${level}]: ${message}\n${JSON.stringify(meta, null, 2)}`;
+        winston.format.errors({ stack: true }),
+        winston.format.printf(({ level, message, timestamp, stack, ...meta }) => {
+          const metaInfo = Object.keys(meta).length > 0 ? `\n${JSON.stringify(meta, null, 2)}` : "";
+          return `${timestamp} [${level}]: ${message}${stack ? `\n${stack}` : ""}${metaInfo}`;
         })
-      )
-    }),
+      ),
+    })
     new OpenTelemetryTransportV3(),
   ],
 });
