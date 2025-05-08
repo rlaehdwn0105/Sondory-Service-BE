@@ -47,7 +47,7 @@ pipeline {
     stage('Update image.tag in values.yaml and Git Push') {
       steps {
         withCredentials([usernamePassword(credentialsId: githubCredential, usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
-          sh '''
+          sh """
             git config --global user.name "jenkins-bot"
             git config --global user.email "jenkins@ci.local"
 
@@ -60,7 +60,7 @@ pipeline {
             git commit -m "ci: rollout to canary image for build #${BUILD_NUMBER}" || echo "No changes to commit"
 
             git push https://${GH_USER}:${GH_TOKEN}@github.com/rlaehdwn0105/Sondory-Service-BE.git ${GITHUB_BRANCH}
-          '''
+          """
         }
       }
     }
@@ -68,10 +68,10 @@ pipeline {
 
   post {
     success {
-      echo '성공: Docker 이미지 빌드 및 values.yaml 업데이트 완료'
+      echo '✅ 성공: Docker 이미지 빌드 및 values.yaml 업데이트 완료'
     }
     failure {
-      echo '실패: 빌드 또는 Git 푸시에 문제가 발생했습니다.'
+      echo '❌ 실패: 빌드 또는 Git 푸시에 문제가 발생했습니다.'
     }
   }
 }
