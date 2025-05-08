@@ -104,7 +104,11 @@ app.use((err, req, res, next) => {
   logger.error('Unhandled error occurred', {
     message: err.message,
     status: err.status,
-    trace_id: trace.getSpan(context.active())?.spanContext().traceId || 'unknown',
+    stack: err.stack,
+    method: req.method,
+    url: req.originalUrl,
+    user_agent: req.headers['user-agent'],
+    timestamp: new Date().toISOString(),
   });
 
   res.status(err.status || 500).json({
