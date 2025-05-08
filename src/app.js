@@ -101,7 +101,7 @@ app.use((req, res, next) => {
 
 // 에러 핸들링
 app.use((err, req, res, next) => {
-  logger.error('Unhandled error occurred', {
+  logger.error('error:', {
     message: err.message,
     status: err.status || 500, 
     stack: err.stack,
