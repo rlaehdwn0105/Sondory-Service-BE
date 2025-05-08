@@ -22,34 +22,34 @@ export async function signup(req, res, next) {
 
     if (!email || !password || !username) {
       const error = new Error("All fields are required.");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       const error = new Error("Invalid email format.");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
     if (password.length < 6) {
       const error = new Error("Password must be at least 6 characters.");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
     const emailExists = await User.findOne({ where: { email } });
     if (emailExists) {
       const error = new Error("Email already in use.");
-      error.statusCode = 409;
+      error.status = 409;
       throw error;
     }
 
     const usernameExists = await User.findOne({ where: { username } });
     if (usernameExists) {
       const error = new Error("Username already taken.");
-      error.statusCode = 409;
+      error.status = 409;
       throw error;
     }
 
@@ -109,20 +109,20 @@ export async function login(req, res, next) {
     const user = await User.findOne({ where: { email } });
     if (!user) {
       const error = new Error("Invalid credentials.");
-      error.statusCode = 401;
+      error.status = 401;
       throw error;
     }
 
     if (!user.isVerified) {
       const error = new Error("Please verify your email before logging in.");
-      error.statusCode = 403;
+      error.status = 403;
       throw error;
     }
 
     const isPasswordCorrect = await bcryptjs.compare(password, user.password);
     if (!isPasswordCorrect) {
       const error = new Error("Invalid credentials.");
-      error.statusCode = 401;
+      error.status = 401;
       throw error;
     }
 
@@ -150,7 +150,7 @@ export async function verifyEmail(req, res, next) {
 
     if (!user) {
       const error = new Error("Invalid or expired token.");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
