@@ -1,15 +1,18 @@
-import Song  from "../models/song.js";
+import Song from "../models/song.js";
 import RecentPlay from "../models/recentplay.js";
 import User from "../models/user.js";
 import { deleteS3Files } from "../services/s3Delete.js";
 import { sanitizeSongs } from "../services/songSanitizer.js";
 
-
 // 내가 업로드한 곡 목록
 export const getMySongs = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    if (!userId) throw new Error("User not found");
+    if (!userId) {
+      const error = new Error("User not found.");
+      error.statusCode = 401;
+      throw error;
+    }
 
     const songs = await Song.findAll({
       where: { UploaderId: userId },
@@ -27,8 +30,8 @@ export const getMySongs = async (req, res, next) => {
         },
       ],
     });
-    const safeSongs = sanitizeSongs(songs);
 
+    const safeSongs = sanitizeSongs(songs);
     res.status(200).json(safeSongs);
   } catch (error) {
     next(error);
@@ -39,12 +42,19 @@ export const getMySongs = async (req, res, next) => {
 export const uploadSong = async (req, res, next) => {
   try {
     const { title, coverUrl, songUrl, duration } = req.body;
+
     if (!title || !coverUrl || !duration || !songUrl) {
-      throw new Error("All fields are required");
+      const error = new Error("All fields are required.");
+      error.statusCode = 400;
+      throw error;
     }
-    console.log("req.body", req.body);
+
     const user = req.user;
-    if (!user) throw new Error("User not found");
+    if (!user) {
+      const error = new Error("User not found.");
+      error.statusCode = 401;
+      throw error;
+    }
 
     const fullCoverUrl = `${process.env.AWS_IMAGE_RESIZED_BUCKET_URL}${coverUrl}`;
     const fullAudioUrl = `${process.env.AWS_AUDIO_BUCKET_URL}${songUrl}`;
@@ -70,10 +80,16 @@ export const deleteSong = async (req, res, next) => {
     const user = req.user;
 
     const song = await Song.findOne({ where: { id: songId } });
-    if (!song) throw new Error("Song not found");
+    if (!song) {
+      const error = new Error("Song not found.");
+      error.statusCode = 404;
+      throw error;
+    }
 
     if (song.UploaderId !== user.id) {
-      throw new Error("You are not the uploader of this song");
+      const error = new Error("You are not the uploader of this song.");
+      error.statusCode = 403;
+      throw error;
     }
 
     const extractKey = (url, baseUrl) => url.replace(baseUrl, "");
@@ -81,6 +97,7 @@ export const deleteSong = async (req, res, next) => {
     const imageKey = extractKey(song.coverUrl, process.env.AWS_IMAGE_RESIZED_BUCKET_URL);
 
     await deleteS3Files({ audioKey, imageKey });
+
     const playRecord = await RecentPlay.findOne({
       where: {
         SongId: songId,
@@ -92,8 +109,9 @@ export const deleteSong = async (req, res, next) => {
       await playRecord.destroy();
       console.log("RecentPlay record deleted");
     }
+
     await song.destroy();
-    return res.status(200).json({ message: "Song deleted successfully" });
+    res.status(200).json({ message: "Song deleted successfully" });
   } catch (error) {
     next(error);
   }
