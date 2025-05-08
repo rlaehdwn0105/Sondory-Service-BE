@@ -106,6 +106,7 @@ app.use((err, req, res, next) => {
     status: err.status || 500, 
     stack: err.stack,
     method: req.method,
+    url: req.originalUrl,
     data: err.data || null,
   });
 
