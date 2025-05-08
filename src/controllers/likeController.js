@@ -1,6 +1,7 @@
 import User from "../models/user.js";
 import Song from "../models/song.js";
 import { sanitizeSongs } from "../services/songSanitizer.js";
+import { CustomError } from "../utils/CustomError.js";
 
 // 좋아요 등록
 export const likeSong = async (req, res, next) => {
@@ -12,16 +13,16 @@ export const likeSong = async (req, res, next) => {
     const song = await Song.findOne({ where: { id: songId } });
 
     if (!user || !song) {
-      throw new Error("User or Song not found");
+      throw new CustomError(404, "User or Song not found");
     }
 
     const alreadyLiked = await user.hasLikedSong(song);
     if (alreadyLiked) {
-      throw new Error("Song already liked");
+      throw new CustomError(400, "Song already liked");
     }
 
     await user.addLikedSong(song);
-    return res.status(201).json({ message: "Song liked successfully", liked: true });
+    throw new CustomError(201, "Song liked successfully", { liked: true });
   } catch (error) {
     next(error);
   }
@@ -37,16 +38,16 @@ export const unlikeSong = async (req, res, next) => {
     const song = await Song.findOne({ where: { id: songId } });
 
     if (!user || !song) {
-      throw new Error("User or Song not found");
+      throw new CustomError(404, "User or Song not found");
     }
 
     const liked = await user.hasLikedSong(song);
     if (!liked) {
-      throw new Error("You haven't liked this song");
+      throw new CustomError(400, "You haven't liked this song");
     }
 
     await user.removeLikedSong(song);
-    return res.status(200).json({ message: "Song unliked successfully", liked: false });
+    throw new CustomError(200, "Song unliked successfully", { liked: false });
   } catch (error) {
     next(error);
   }
@@ -58,15 +59,12 @@ export const getMyLikedSongs = async (req, res, next) => {
     const userId = req.user.id;
 
     if (!userId) {
-      throw new Error("User not found");
+      throw new CustomError(404, "User not found");
     }
 
     const songs = await Song.findAll({
       include: [
-        {
-          model: User,
-          attributes: ["id", "username"],
-        },
+        { model: User, attributes: ["id", "username"] },
         {
           model: User,
           as: "Likers",
@@ -78,8 +76,8 @@ export const getMyLikedSongs = async (req, res, next) => {
       order: [["createdAt", "DESC"]],
     });
 
-    const safeSongs = sanitizeSongs(songs); 
-    res.status(200).json(safeSongs);
+    const safeSongs = sanitizeSongs(songs);
+    throw new CustomError(200, "Fetched liked songs", safeSongs);
   } catch (error) {
     next(error);
   }
