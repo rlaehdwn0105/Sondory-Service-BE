@@ -35,7 +35,7 @@ export const logger = winston.createLogger({
           return `${timestamp} [${level}]: ${message}${stack ? `\n${stack}` : ""}${metaInfo}`;
         })
       ),
-    })
+    }),
     new OpenTelemetryTransportV3(),
   ],
 });
