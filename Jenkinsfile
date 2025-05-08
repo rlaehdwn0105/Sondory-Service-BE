@@ -60,7 +60,7 @@ pipeline {
             sh "git remote set-url origin https://${env.GITHUB_CREDENTIALS}@github.com/rlaehdwn0105/Sondory-Service-BE.git"
             sh "git push origin ${env.GITHUB_BRANCH}"
           }
-        }
+  
       }
     }
   }
