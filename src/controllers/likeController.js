@@ -13,14 +13,14 @@ export const likeSong = async (req, res, next) => {
 
     if (!user || !song) {
       const error = new Error("User or Song not found");
-      error.statusCode = 404;
+      error.status = 404;
       throw error;
     }
 
     const alreadyLiked = await user.hasLikedSong(song);
     if (alreadyLiked) {
       const error = new Error("Song already liked");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
@@ -42,14 +42,14 @@ export const unlikeSong = async (req, res, next) => {
 
     if (!user || !song) {
       const error = new Error("User or Song not found");
-      error.statusCode = 404;
+      error.status = 404;
       throw error;
     }
 
     const liked = await user.hasLikedSong(song);
     if (!liked) {
       const error = new Error("You haven't liked this song");
-      error.statusCode = 400;
+      error.status = 400;
       throw error;
     }
 
@@ -67,7 +67,7 @@ export const getMyLikedSongs = async (req, res, next) => {
 
     if (!userId) {
       const error = new Error("User not found");
-      error.statusCode = 404;
+      error.status = 404;
       throw error;
     }
 
