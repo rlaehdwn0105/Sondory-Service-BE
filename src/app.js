@@ -19,16 +19,13 @@ import userRoute from './routes/userRoute.js';
 import uploadRoute from './routes/uploadRoute.js';
 import streamRoute from './routes/streamRoute.js';
 import { logger } from './logger.js';
-import { trace, context } from '@opentelemetry/api'; 
-import winston from 'winston';
-import otelTransportPkg from '@opentelemetry/winston-transport';
-const { OpenTelemetryTransportV3 } = otelTransportPkg;
 
 dotenv.config();
 
 const app = express();
 app.set('port', process.env.PORT || 8001);
 
+// CORS 설정
 app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true,
@@ -37,44 +34,31 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(morgan('dev'));
 
-// trace_id 포함하는 Morgan 설정
-const morganFormat = (tokens, req, res) => {
-  const traceId = trace.getSpan(context.active())?.spanContext().traceId || 'unknown';
-  return [
-    `trace_id=${traceId}`,
-    tokens.method(req, res),
-    tokens.url(req, res),
-    tokens.status(req, res),
-    tokens['response-time'](req, res), 'ms'
-  ].join(' ');
-};
-
-if (process.env.NODE_ENV === 'development') {
-  const logDir = path.join(process.cwd(), 'tmp');
-  if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
-  const logStream = fs.createWriteStream(path.join(logDir, 'access.log'), { flags: 'a' });
-
-  app.use(morgan(morganFormat, { stream: logStream }));
-
-  app.use(helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: false,
-  }));
+// helmet
+if (process.env.NODE_ENV === 'production') {
+  app.use(morgan('combined'));
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: false,
+    }),
+  );
   app.use(hpp());
 } else {
-  app.use(morgan(morganFormat));
-  app.use(helmet());
+  app.use(morgan('dev'));
 }
-
 // Swagger
 const specs = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
+// Health check
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
+
 // DB 연결
 db.sequelize.sync({ force: false })
   .then(() => {
@@ -101,9 +85,9 @@ app.use((req, res, next) => {
 
 // 에러 핸들링
 app.use((err, req, res, next) => {
-  logger.error('error:', {
+  logger.error('Unhandled error occurred', {
     message: err.message,
-    status: err.status || 500, 
+    status: err.status || 500,
     stack: err.stack,
     method: req.method,
     url: req.originalUrl,
