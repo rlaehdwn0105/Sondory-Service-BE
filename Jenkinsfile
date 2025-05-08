@@ -47,20 +47,21 @@ pipeline {
     stage('Update image.tag in values.yaml and Git Push') {
       steps {
         withCredentials([usernamePassword(credentialsId: githubCredential, usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
-          sh """
+          sh '''
             git config --global user.name "jenkins-bot"
             git config --global user.email "jenkins@ci.local"
 
-            git checkout ${GITHUB_BRANCH}
-            git pull --rebase origin ${GITHUB_BRANCH}
+            git checkout main
+            git pull --rebase origin main
 
             sed -i 's/^  tag: .*/  tag: canary/' helm-chart/my-backend/values.yaml
 
             git add helm-chart/my-backend/values.yaml
-            git commit -m "ci: rollout to canary image for build #${BUILD_NUMBER}" || echo "No changes to commit"
+            git commit -m "ci: rollout to canary image for build #$BUILD_NUMBER" || echo "No changes to commit"
 
-            git push https://${GH_USER}:${GH_TOKEN}@github.com/rlaehdwn0105/Sondory-Service-BE.git ${GITHUB_BRANCH}
-          """
+            git remote set-url origin https://$GH_USER:$GH_TOKEN@github.com/rlaehdwn0105/Sondory-Service-BE.git
+            git push origin main
+          '''
         }
       }
     }
