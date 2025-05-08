@@ -2,17 +2,18 @@ pipeline {
   agent any
 
   environment {
-    dockerHubRegistry = 'dongjukim123/soundory-be'
-    dockerHubRegistryCredential = 'dockerhub-token'
-    githubCredential = 'github-token'
-    GITHUB_REPO_URL = 'https://github.com/rlaehdwn0105/Sondory-Service-BE.git'
-    GITHUB_BRANCH = 'main'
+    dockerHubRegistry             = 'dongjukim123/soundory-be'
+    dockerHubRegistryCredential   = 'dockerhub-token'
+    githubCredential              = 'github-token'
+    GITHUB_REPO_URL               = 'https://github.com/rlaehdwn0105/Sondory-Service-BE.git'
+    GITHUB_BRANCH                 = 'main'
   }
 
   stages {
     stage('Checkout from GitHub') {
       steps {
-        checkout([$class: 'GitSCM',
+        checkout([
+          $class: 'GitSCM',
           branches: [[name: "refs/heads/${GITHUB_BRANCH}"]],
           userRemoteConfigs: [[
             url: "${GITHUB_REPO_URL}",
@@ -32,7 +33,7 @@ pipeline {
       }
     }
 
-    stage('Push Docker Images') {
+    stage('Push Docker Images to Hub') {
       steps {
         withDockerRegistry(credentialsId: dockerHubRegistryCredential, url: '') {
           sh """
@@ -44,28 +45,38 @@ pipeline {
       }
     }
 
-    stage('Update image.tag in values.yaml and Git Push') {
+    stage('Update Helm values.yaml & Git Push') {
       steps {
-        withCredentials([usernamePassword(credentialsId: githubCredential, usernameVariable: 'USERNAME', passwordVariable: 'TOKEN')]) {
+        // 깃 사용자명/토큰 바인딩
+        withCredentials([usernamePassword(
+          credentialsId: githubCredential,
+          usernameVariable: 'GIT_USER',
+          passwordVariable: 'GIT_TOKEN'
+        )]) {
           sh '''
             set -e
 
+            # Git 설정
             git config --global user.name "jenkins-bot"
             git config --global user.email "jenkins@ci.local"
 
-            git checkout main
-            git pull --rebase origin main
+            # 최신 main 브랜치 가져오기
+            git checkout ${GITHUB_BRANCH}
+            git pull --rebase origin ${GITHUB_BRANCH}
 
-            sed -i 's/^  tag: .*/  tag: canary/' helm-chart/my-backend/values.yaml
+            # values.yaml 의 tag 값을 BUILD_NUMBER 로 교체
+            sed -i "s|^  tag: .*|  tag: ${BUILD_NUMBER}|" helm-chart/my-backend/values.yaml
 
-            git add helm-chart/my-backend/values.yaml
-            git commit -m "ci: rollout to canary image for build #$BUILD_NUMBER" || echo "No changes to commit"
+            # 변경사항 커밋
+            if git diff --quiet; then
+              echo "No changes to commit"
+            else
+              git commit -am "ci: update helm image tag to ${BUILD_NUMBER}"
+            fi
 
-            # GitHub 권장 방식: username은 x-access-token
-            git remote remove origin || true
-            git remote add origin https://x-access-token:$TOKEN@github.com/rlaehdwn0105/Sondory-Service-BE.git
-
-            git push origin main
+            # 인증 토큰을 포함한 원격 URL로 변경 후 푸시
+            git remote set-url origin "https://${GIT_USER}:${GIT_TOKEN}@github.com/rlaehdwn0105/Sondory-Service-BE.git"
+            git push origin ${GITHUB_BRANCH}
           '''
         }
       }
@@ -74,10 +85,10 @@ pipeline {
 
   post {
     success {
-      echo '✅ 성공: Docker 이미지 빌드 및 values.yaml 업데이트 완료'
+      echo '✅ 성공: 이미지 빌드·푸시 및 values.yaml 업데이트 완료'
     }
     failure {
-      echo '❌ 실패: 빌드 또는 Git 푸시에 문제가 발생했습니다.'
+      echo '❌ 실패: 파이프라인 실행 중 오류 발생'
     }
   }
 }
