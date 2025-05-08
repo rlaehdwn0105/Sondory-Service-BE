@@ -19,7 +19,7 @@ import userRoute from './routes/userRoute.js';
 import uploadRoute from './routes/uploadRoute.js';
 import streamRoute from './routes/streamRoute.js';
 import { logger } from './logger.js';
-import { trace, context } from '@opentelemetry/api'; // ✅ 추가된 부분
+import { trace, context } from '@opentelemetry/api'; 
 import winston from 'winston';
 import otelTransportPkg from '@opentelemetry/winston-transport';
 const { OpenTelemetryTransportV3 } = otelTransportPkg;
@@ -78,10 +78,10 @@ app.get('/health', (req, res) => {
 // DB 연결
 db.sequelize.sync({ force: false })
   .then(() => {
-    logger.info('✅ Database connected');
+    logger.info('Database connected');
   })
   .catch((err) => {
-    logger.error('❌ Failed to connect to DB', { error: err.message });
+    logger.error('Failed to connect to DB', { error: err.message });
   });
 
 // 라우트
