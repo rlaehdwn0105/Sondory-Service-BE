@@ -92,28 +92,17 @@ pipeline {
 
           sh "sed -i 's|tag: .*|tag: ${BUILD_NUMBER}|' helm-chart/my-backend/values.yaml"
 
-          script {
-            def currentTag = sh(
-              script: "grep 'tag:' helm-chart/my-backend/values.yaml | awk '{print \$2}'",
-              returnStdout: true
-            ).trim()
+          sh "git add helm-chart/my-backend/values.yaml"
+          sh "git commit -m 'ci: update image tag to #${BUILD_NUMBER}' || echo 'No changes to commit'"
 
-            if (currentTag == BUILD_NUMBER.toString()) {
-              echo "Tag is already ${BUILD_NUMBER}, skipping git push to avoid loop."
-            } else {
-              sh "git add helm-chart/my-backend/values.yaml"
-              sh "git commit -m 'ci: update image tag to #${BUILD_NUMBER}' || echo 'No changes to commit'"
-
-              withCredentials([gitUsernamePassword(credentialsId: "${GITHUB_CREDENTIALS}", gitToolName: 'git-tool')]) {
-                sh "git push origin ${GITHUB_BRANCH}"
-              }
-            }
+          withCredentials([gitUsernamePassword(credentialsId: "${GITHUB_CREDENTIALS}", gitToolName: 'git-tool')]) {
+            sh "git push origin ${GITHUB_BRANCH}"
           }
         }
       }
       post {
         success {
-          echo 'Helm values.yaml updated successfully!'
+          echo 'Helm values.yaml updated and pushed successfully!'
         }
         failure {
           echo 'Helm update failed!'
