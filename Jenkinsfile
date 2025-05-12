@@ -6,33 +6,13 @@ pipeline {
     DOCKER_CREDENTIALS = 'dockerhub-token'
     GITHUB_CREDENTIALS = 'github-token'
     GITHUB_REPO_URL    = 'https://github.com/rlaehdwn0105/Sondory-Service-BE.git'
+    HELM_GITOPS_REPO   = 'https://github.com/rlaehdwn0105/Soundory-Service-Infra.git'
     GITHUB_BRANCH      = 'main'
     GIT_USER_EMAIL     = 'dongju08@naver.com'
     GIT_USER_NAME      = 'rlaehdwn0105'
   }
 
   stages {
-
-    stage('Check Changed Files') {
-      steps {
-        script {
-          def changedFiles = sh(
-            script: "git diff --name-only HEAD~1 HEAD || true",
-            returnStdout: true
-          ).trim().split("\n")
-
-          def shouldRun = changedFiles.any { it.startsWith("src/") }
-
-          if (!shouldRun) {
-            echo "No changes in src/, skipping pipeline."
-            currentBuild.result = 'NOT_BUILT'
-            error('Pipeline skipped due to no src/ changes')
-          } else {
-            echo "Detected change in src/, proceeding with pipeline."
-          }
-        }
-      }
-    }
 
     stage('Checkout') {
       steps {
@@ -101,11 +81,11 @@ pipeline {
 
     stage('Update Helm values & Git Push') {
       steps {
-        sh 'mkdir -p gitOpsRepo'
+        sh 'rm -rf gitOpsRepo && mkdir -p gitOpsRepo'
         dir('gitOpsRepo') {
           git branch: "${GITHUB_BRANCH}",
               credentialsId: "${GITHUB_CREDENTIALS}",
-              url: "${GITHUB_REPO_URL}"
+              url: "${HELM_GITOPS_REPO}"
 
           sh "git config --global user.email '${GIT_USER_EMAIL}'"
           sh "git config --global user.name '${GIT_USER_NAME}'"
@@ -122,10 +102,9 @@ pipeline {
               echo "Tag is already ${BUILD_NUMBER}, skipping git push to avoid loop."
             } else {
               sh "git add helm-chart/my-backend/values.yaml"
-              sh "git commit -m 'ci: rollout to image build #${BUILD_NUMBER}' || echo 'No changes to commit'"
+              sh "git commit -m 'ci: update image tag to #${BUILD_NUMBER}' || echo 'No changes to commit'"
 
               withCredentials([gitUsernamePassword(credentialsId: "${GITHUB_CREDENTIALS}", gitToolName: 'git-tool')]) {
-                sh "git remote set-url origin https://${GITHUB_CREDENTIALS}@github.com/rlaehdwn0105/Sondory-Service-BE.git"
                 sh "git push origin ${GITHUB_BRANCH}"
               }
             }
