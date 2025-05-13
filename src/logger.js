@@ -14,7 +14,7 @@ const resource = resourceFromAttributes({
 });
 
 const logExporter = new OTLPLogExporter({
-  url: 'http://otel-otel-collector.lgtm.svc.cluster.local:4318/v1/logs',
+  url: 'http://otel-collector.otel-collector.svc.cluster.local:4318/v1/logs',
 });
 
 const loggerProvider = new LoggerProvider({ resource });
