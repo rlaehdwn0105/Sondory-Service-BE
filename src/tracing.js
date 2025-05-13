@@ -11,7 +11,7 @@ const resource = resourceFromAttributes({
   [SEMRESATTRS_SERVICE_NAME]: 'backend-service',
 });
 
-const OTEL_COLLECTOR = 'otel-otel-collector.lgtm.svc.cluster.local';
+const OTEL_COLLECTOR = 'otel-collector.otel-collector.svc.cluster.local';
 
 const sdk = new NodeSDK({
   resource,
