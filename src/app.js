@@ -35,6 +35,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// Health check
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // helmet
 if (process.env.NODE_ENV === 'production') {
   app.use(
@@ -52,10 +57,6 @@ if (process.env.NODE_ENV === 'production') {
 const specs = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
-// Health check
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
-});
 
 // DB 연결
 db.sequelize.sync({ force: false })
