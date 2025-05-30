@@ -29,11 +29,11 @@ export const getAllSongs = async (req, res, next) => {
   }
 };
 
-// 특정 유저의 전체 곡 조회
+// 특정 유저의 전체 곡 조회.
 export const getSongById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    if (!id || id == req.user.id) {
+    if (!id || id === req.user.id) {
       const error = new Error("Song ID required or invalid.");
       error.status = 400;
       throw error;
