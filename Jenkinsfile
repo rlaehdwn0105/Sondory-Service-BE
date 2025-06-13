@@ -5,7 +5,7 @@ pipeline {
     DOCKER_REGISTRY    = 'dongjukim123/soundory-be'
     DOCKER_CREDENTIALS = 'dockerhub-token'
     GITHUB_CREDENTIALS = 'github-token'
-    GITHUB_REPO_URL    = 'https://github.com/rlaehdwn0105/Sondory-Service-BE.git'
+    GITHUB_REPO_URL    = 'https://github.com/rlaehdwn0105/Sondory-Service-backend.git'
     HELM_GITOPS_REPO   = 'https://github.com/rlaehdwn0105/Soundory-Service-Infra.git'
     GITHUB_BRANCH      = 'main'
     GIT_USER_EMAIL     = 'dongju08@naver.com'
